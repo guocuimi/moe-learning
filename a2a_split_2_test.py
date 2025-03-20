@@ -35,11 +35,28 @@ if __name__ == "__main__":
     time.sleep(rank * 0.1)
     print(f"Rank {rank}, input: {input.tolist()}")
     output = torch.zeros(sum(output_splits), dtype=torch.int32, device=device)
-    dist.all_to_all_single(output, input, output_splits, input_splits)
+    dist.all_to_all_single(output=output, input=input, output_split_sizes=output_splits, input_split_sizes=input_splits)
     
     time.sleep(1)
     
     time.sleep(rank * 0.1)
     print(f"Rank {rank}, output: {output.tolist()}")
+
+    time.sleep(1)
+    if rank == 0:
+        print("--------------------------------")
+
+    input2 = torch.empty_like(input)
+    dist.all_to_all_single(output=input2, input=output, output_split_sizes=input_splits, input_split_sizes=output_splits)
+
+    time.sleep(rank * 0.2)
+    print(f"Rank {rank}, input2: {input2.tolist()}")
+
+    time.sleep(1)
+
+    if torch.equal(input, input2):
+        print(f"Rank {rank}, Success")
+    else:
+        print(f"Rank {rank}, Failed")
     
     dist.destroy_process_group()
